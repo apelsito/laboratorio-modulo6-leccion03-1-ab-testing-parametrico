@@ -33,11 +33,12 @@ def exploracion_dataframe(dataframe, columna_control):
     df_nulos = pd.DataFrame(dataframe.isnull().sum() / dataframe.shape[0] * 100, columns = ["%_nulos"])
     display(df_nulos[df_nulos["%_nulos"] > 0])
     
+    # Tipos de columnas
     print("\n ..................... \n")
     print(f"Los tipos de las columnas son:")
     display(pd.DataFrame(dataframe.dtypes, columns = ["tipo_dato"]))
     
-    
+    # Enseñar solo las columnas categoricas (o tipo objeto)
     print("\n ..................... \n")
     print("Los valores que tenemos para las columnas categóricas son: ")
     dataframe_categoricas = dataframe.select_dtypes(include = "O")
@@ -50,11 +51,11 @@ def exploracion_dataframe(dataframe, columna_control):
     
     for categoria in dataframe[columna_control].unique():
         dataframe_filtrado = dataframe[dataframe[columna_control] == categoria]
-    
+        #Describe de objetos
         print("\n ..................... \n")
         print(f"Los principales estadísticos de las columnas categóricas para el {categoria.upper()} son: ")
         display(dataframe_filtrado.describe(include = "O").T)
-        
+        #Hacer un describe
         print("\n ..................... \n")
         print(f"Los principales estadísticos de las columnas numéricas para el {categoria.upper()} son: ")
         display(dataframe_filtrado.describe().T)
@@ -85,12 +86,21 @@ class Asunciones:
         if metodo == 'shapiro':
             _, p_value = stats.shapiro(self.dataframe[self.columna_numerica])
             resultado = p_value > alpha
-            mensaje = f"los datos siguen una distribución normal según el test de Shapiro-Wilk." if resultado else f"los datos no siguen una distribución normal según el test de Shapiro-Wilk."
+            if resultado == True:
+                mensaje = f"los datos siguen una distribución normal según el test de Shapiro-Wilk."
+            else:
+                mensaje = f"los datos no siguen una distribución normal según el test de Shapiro-Wilk."
         
         elif metodo == 'kolmogorov':
-            _, p_value = stats.kstest(self.dataframe[self.columna_numerica], 'norm')
+            normalizale = self.dataframe[self.columna_numerica]
+            loc, scale = stats.norm.fit(normalizale) # Normalizamos para que devuelva un pvalue como dios manda
+            
+            _, p_value = stats.kstest(normalizale, 'norm',args=(loc,scale))
             resultado = p_value > alpha
-            mensaje = f"los datos siguen una distribución normal según el test de Kolmogorov-Smirnov." if resultado else f"los datos no siguen una distribución normal según el test de Kolmogorov-Smirnov."
+            if resultado:
+                mensaje = f"los datos siguen una distribución normal según el test de Kolmogorov-Smirnov."  
+            else:
+                 mensaje = f"los datos no siguen una distribución normal según el test de Kolmogorov-Smirnov."
         else:
             raise ValueError("Método no válido. Por favor, elige 'shapiro' o 'kolmogorov'.")
 
